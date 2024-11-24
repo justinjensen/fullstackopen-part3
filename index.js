@@ -4,6 +4,8 @@ const PORT = 3001;
 
 const app = express();
 
+app.use(express.json());
+
 let persons = [
   {
     id: "1",
@@ -29,6 +31,17 @@ let persons = [
 
 app.get("/api/persons", (req, res) => {
   res.json(persons);
+});
+
+app.post("/api/persons", (req, res) => {
+  const body = req.body;
+  const person = {
+    id: String(Math.random()).substring(2),
+    name: body.name,
+    number: body.number,
+  };
+  persons = persons.concat(person);
+  res.json(person);
 });
 
 app.get("/api/persons/:id", (req, res) => {
