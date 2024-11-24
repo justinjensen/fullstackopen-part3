@@ -1,9 +1,11 @@
 import express from "express";
+import morgan from "morgan";
 
 const PORT = 3001;
 
 const app = express();
 
+app.use(morgan("tiny"));
 app.use(express.json());
 
 let persons = [
