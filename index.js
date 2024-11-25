@@ -21,7 +21,7 @@ app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms :body")
 );
 
-app.get("/api/persons", (req, res) => {
+app.get("/api/persons", (req, res, next) => {
   Person.find({})
     .then((persons) => {
       res.json(persons);
@@ -29,7 +29,7 @@ app.get("/api/persons", (req, res) => {
     .catch((error) => next(error));
 });
 
-app.post("/api/persons", (req, res) => {
+app.post("/api/persons", (req, res, next) => {
   const body = req.body;
 
   let errors = [];
@@ -39,28 +39,32 @@ app.post("/api/persons", (req, res) => {
   if (!body.number) {
     errors.push("number is missing");
   }
-  if (persons.find((person) => person.name === body.name)) {
-    errors.push("name must be unique");
-  }
-  if (errors.length > 0) {
-    return res.status(400).json({
-      errors,
-    });
-  }
 
-  const personObject = {
-    name: body.name,
-    number: body.number,
-  };
+  Person.find({ name: body.name }).then((persons) => {
+    if (persons.length > 0) {
+      errors.push("name must be unique");
+    }
 
-  Person.create(personObject)
-    .then((person) => {
-      res.json(person);
-    })
-    .catch((error) => next(error));
+    if (errors.length > 0) {
+      return res.status(400).json({
+        errors,
+      });
+    }
+
+    const person = {
+      name: body.name,
+      number: body.number,
+    };
+
+    Person.create(person)
+      .then((savedPerson) => {
+        res.json(savedPerson);
+      })
+      .catch((error) => next(error));
+  });
 });
 
-app.get("/api/persons/:id", (req, res) => {
+app.get("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
   Person.findById(id)
     .then((person) => {
@@ -73,7 +77,23 @@ app.get("/api/persons/:id", (req, res) => {
     .catch((error) => next(error));
 });
 
-app.delete("/api/persons/:id", (req, res) => {
+app.put("/api/persons/:id", (req, res, next) => {
+  const id = req.params.id;
+  const body = req.body;
+
+  const person = {
+    name: body.name,
+    number: body.number,
+  };
+
+  Person.findByIdAndUpdate(id, person, { new: true })
+    .then((updatedPerson) => {
+      res.json(updatedPerson);
+    })
+    .catch((error) => next(error));
+});
+
+app.delete("/api/persons/:id", (req, res, next) => {
   const id = req.params.id;
   Person.findByIdAndDelete(id)
     .then((result) => {
@@ -82,7 +102,7 @@ app.delete("/api/persons/:id", (req, res) => {
     .catch((error) => next(error));
 });
 
-app.get("/info", (req, res) => {
+app.get("/info", (req, res, next) => {
   Person.countDocuments({})
     .then((count) => {
       const html = `<!doctype html>
