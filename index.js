@@ -69,13 +69,18 @@ app.post("/api/persons", (req, res) => {
     });
   }
 
-  const person = {
-    id: String(Math.random()).substring(2),
+  const personObject = {
     name: body.name,
     number: body.number,
   };
-  persons = persons.concat(person);
-  res.json(person);
+
+  Person.create(personObject)
+    .then((person) => {
+      res.json(person);
+    })
+    .catch((error) => {
+      res.status(500).json({ error: "unknown error" });
+    });
 });
 
 app.get("/api/persons/:id", (req, res) => {
