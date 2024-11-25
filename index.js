@@ -22,9 +22,11 @@ app.use(
 );
 
 app.get("/api/persons", (req, res) => {
-  Person.find({}).then((persons) => {
-    res.json(persons);
-  });
+  Person.find({})
+    .then((persons) => {
+      res.json(persons);
+    })
+    .catch((error) => next(error));
 });
 
 app.post("/api/persons", (req, res) => {
@@ -55,9 +57,7 @@ app.post("/api/persons", (req, res) => {
     .then((person) => {
       res.json(person);
     })
-    .catch((error) => {
-      res.status(500).json({ error: "unknown error" });
-    });
+    .catch((error) => next(error));
 });
 
 app.get("/api/persons/:id", (req, res) => {
@@ -70,9 +70,7 @@ app.get("/api/persons/:id", (req, res) => {
         res.status(404).end();
       }
     })
-    .catch((error) => {
-      res.status(500).end({ error: "unknown error" });
-    });
+    .catch((error) => next(error));
 });
 
 app.delete("/api/persons/:id", (req, res) => {
@@ -81,9 +79,7 @@ app.delete("/api/persons/:id", (req, res) => {
     .then((result) => {
       res.status(204).end();
     })
-    .catch((error) => {
-      res.status(500).send({ error: "unknown error" });
-    });
+    .catch((error) => next(error));
 });
 
 app.get("/info", (req, res) => {
@@ -102,10 +98,20 @@ app.get("/info", (req, res) => {
 </html>`;
       res.send(html);
     })
-    .catch((error) => {
-      res.status(500).end();
-    });
+    .catch((error) => next(error));
 });
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
