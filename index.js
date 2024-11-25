@@ -1,9 +1,12 @@
+import "dotenv/config";
+
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
 
-const PORT = 3001;
+import Person from "./person.js";
 
+const PORT = 3001;
 const app = express();
 
 app.use(express.static("dist"));
@@ -42,7 +45,9 @@ let persons = [
 ];
 
 app.get("/api/persons", (req, res) => {
-  res.json(persons);
+  Person.find({}).then((persons) => {
+    res.json(persons);
+  });
 });
 
 app.post("/api/persons", (req, res) => {
@@ -75,12 +80,17 @@ app.post("/api/persons", (req, res) => {
 
 app.get("/api/persons/:id", (req, res) => {
   const id = req.params.id;
-  const person = persons.find((person) => person.id === id);
-  if (person) {
-    res.json(person);
-  } else {
-    res.status(404).end();
-  }
+  Person.findById(id)
+    .then((person) => {
+      if (person) {
+        res.json(person);
+      } else {
+        res.status(404).end();
+      }
+    })
+    .catch((error) => {
+      res.status(500).end({ error: "unknown error" });
+    });
 });
 
 app.delete("/api/persons/:id", (req, res) => {
@@ -90,19 +100,24 @@ app.delete("/api/persons/:id", (req, res) => {
 });
 
 app.get("/info", (req, res) => {
-  const date = new Date();
-  const html = `<!doctype html>
+  Person.countDocuments({})
+    .then((count) => {
+      const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Info</title>
 </head>
 <body>
-<p>Phonebook has info for ${persons.length} people</p>
-<p>${date}</p>
+<p>Phonebook has info for ${count} people</p>
+<p>${new Date()}</p>
 </body>
 </html>`;
-  res.send(html);
+      res.send(html);
+    })
+    .catch((error) => {
+      res.status(500).end();
+    });
 });
 
 app.listen(PORT, () => {
